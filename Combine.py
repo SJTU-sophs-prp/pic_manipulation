@@ -5,7 +5,6 @@ from PIL import Image
 
 
 def mix(img1_path, img2_path, Overlap_rate):
-
     img1 = Image.open(img1_path)
     img2 = Image.open(img2_path)
     img1_size = img1.size
@@ -29,7 +28,7 @@ def mix(img1_path, img2_path, Overlap_rate):
 
     mix1 = cv2.imread(temp_path + "B.jpg")
     mix2 = cv2.imread(temp_path + "C.jpg")
-    mix = cv2.addWeighted(mix1, overlap_rate, mix2, 1 - overlap_rate, 0)
+    mix = cv2.addWeighted(mix1, Overlap_rate, mix2, 1 - Overlap_rate, 0)
     cv2.imwrite(temp_path + "M.jpg", mix)
 
     imgA = Image.open(temp_path + "A.jpg")
@@ -45,7 +44,8 @@ def mix(img1_path, img2_path, Overlap_rate):
     joint.save(temp_path + "Out.jpg")
     time.sleep(0.01)
 
-def mix_hor(img1_path, img2_path,overlap_rate):
+
+def mix_hor(img1_path, img2_path, overlap_rate):
     img1 = Image.open(img1_path)
     img2 = Image.open(img2_path)
     img1_size = img1.size
@@ -90,6 +90,7 @@ def mix_hor(img1_path, img2_path,overlap_rate):
     os.remove("./temp/D.jpg")
     os.remove("./temp/M.jpg")
 
+
 def getAllImg(path):
     result = []
     filelist = os.listdir(path)
@@ -101,26 +102,31 @@ def getAllImg(path):
 
 
 if __name__ == '__main__':
-    s = getAllImg("./zm_stage2")
-    s.sort()
 
     # 参数调节如下 #
+    path = "./zm_stage2"  # 原散装图文件夹
     all_pics = 17  # 2257  # 裁好的照片的总数
     height = 17  # 37  # 行数
     width = 1  # 61  # 列数
-    overlap_rate = 3/4  # (256 - 50) / 256  # 单侧重叠像素比
+    overlap_rate_x = 3 / 4  # (256 - 50) / 256  # 横向重叠像素比
+    overlap_rate_y = 3 / 4  # (256 - 50) / 256  # 纵向重叠像素比
     n = 0  # 中断后从第n张开始继续拼，默认从0开始
+    output = "./test.jpg"  # 最后保存的路径
+
+
+    ### 先纵向拼 ###
+    s = getAllImg(path)
+    s.sort()
 
     for i in range(all_pics):
-        if i % height == 0 and i >= n*height:
+        if i % height == 0 and i >= n * height:
             list = s[i:i + height]
-            mix(list[0], list[1], overlap_rate)
+            mix(list[0], list[1], overlap_rate_y)
             for j in range(2, height):
-                mix("./temp/out.jpg", list[j], overlap_rate)
+                mix("./temp/out.jpg", list[j], overlap_rate_y)
                 time.sleep(0.01)  # wait for fileIO
 
-            new_name = "./temp/out" + str(int(i / height)).zfill(2) + ".jpg"
-            # new_name = "./mask128/30w_out" + str(int(i / height)).zfill(2) + ".jpg"
+            new_name = "./temp/out" + str(int(i / height)).zfill(2) + ".jpg"  # 每一条都存在temp文件夹里
             os.rename("./temp/out.jpg", new_name)
 
     os.remove("./temp/A.jpg")
@@ -128,19 +134,24 @@ if __name__ == '__main__':
     os.remove("./temp/C.jpg")
     os.remove("./temp/D.jpg")
     os.remove("./temp/M.jpg")
-    # ss = getAllImg("./temp/")
-    # ss.sort()
-    # list = ss[:]
-    #
-    # mix_hor(list[0], list[1], overlap_rate)
-    #
-    # for j in range(1, width-1):
-    #     mix_hor("./temp/Out.jpg", list[j + 1], overlap_rate)
-    #     time.sleep(0.01)  # wait for fileIO
-    # new_name = "./test.jpg"
-    # os.rename("./temp/Out.jpg", new_name)
-    #
-    # for i in list:
-    #     os.remove(i)
+
+
+    ### 再横向拼 ###
+    ss = getAllImg("./temp/")
+    ss.sort()
+    list = ss[:]
+
+    mix_hor(list[0], list[1], overlap_rate_x)
+
+    for j in range(1, width - 1):
+        mix_hor("./temp/Out.jpg", list[j + 1], overlap_rate_x)
+        time.sleep(0.01)  # wait for fileIO
+
+    os.rename("./temp/Out.jpg", output)
+
+    for i in list:
+        os.remove(i)
+
+    ### 如果只需要拼一条，请把“再横向拼”部分注释掉，生成图在"./temp"文件夹里 ###
 
     print("finish")

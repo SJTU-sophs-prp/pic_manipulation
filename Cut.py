@@ -6,7 +6,7 @@ Image.MAX_IMAGE_PIXELS = None
 import math
 
 
-def ver_cut(img_root, width, height, overlap_rate, save_root):
+def ver_cut(img_root, width, height, overlap_rate, save_root, start_point, zfill_num):
     im = Image.open(img_root)
     img_size = im.size
     m = img_size[0]  # 读取图片的宽度
@@ -23,11 +23,11 @@ def ver_cut(img_root, width, height, overlap_rate, save_root):
     for j in range(loop_num):
         y = start_loc * j  # 裁剪起点的y坐标范围
         region = im.crop((0, y, w, y + h))  # 裁剪区
-        region.save(save_root + str(j).zfill(3) + ".jpg")
+        region.save(save_root + str(j+start_point).zfill(zfill_num) + ".jpg")
     print("finish")
 
 
-def total_cut(img_root, resize, width, height, overlap_x, overlap_y, save_root):
+def total_cut(img_root, resize, width, height, overlap_x, overlap_y, save_root, start_point, zfill_num):
     im = Image.open(img_root)
     im = im.resize(resize)
     img_size = im.size
@@ -49,13 +49,7 @@ def total_cut(img_root, resize, width, height, overlap_x, overlap_y, save_root):
             x = start_loc_x * i  # 裁剪起点的x坐标范围
             y = start_loc_y * j  # 裁剪起点的y坐标范围
             region = im.crop((x, y, x + w, y + h))  # 裁剪区
-            region.save(save_root + str(row * i + j).zfill(4) + ".jpg")  # str(i)是裁剪后的编号
-            # img = cv2.imread(save_root + str(row * i + j).zfill(4) + ".jpg", 0)  # 进行边缘提取
-            # img_color = img
-            # blur = cv2.GaussianBlur(img, (3, 3), 0)
-            # canny = cv2.Canny(blur, 250, 250)
-            # im2 = Image.fromarray(canny)  # 为了直观感受 canny 转化成图像
-            # im2.save(save_root + str(row * i + j).zfill(4) + ".jpg")  # 存储成为图像的边缘图
+            region.save(save_root + str(row * i + j + start_point).zfill(zfill_num) + ".jpg")  # str(i)是裁剪后的编号
     print("finish")
 
 
@@ -63,14 +57,17 @@ if __name__ == "__main__":
     img_root = "SSJ.jpg"  # 原始图片路径
     width = 256  # 设置你要裁剪的小图的宽度
     height = 256  # 设置你要裁剪的小图的高度
-    overlap_rate = 1 / 2
+    overlap_rate = 1 / 2  # 等于 overlap_rate_y
+    start_point = 2257  # 序号从第n张开始保存，默认为0；若要从第01234.jpg开始保存，则 start_point 为 1234
+    zfill_num = 5  # 文件名长度，如 00011.jpg 的 zfill_num 为 5
     save_root = "./SSJ/"
 
-    # For single strip
-    # ver_cut(img_root, width, height, overlap_rate, save_root)
+    # 单条裁剪
+    # ver_cut(img_root, width, height, overlap_rate, save_root, start_point, zfill_num)
 
     # For Wuyong & Shengshan
-    resize = (4096, 2560)
+    resize = (4096, 2560)  # For multiscaling
     overlap_x = 3/4
     overlap_y = 3/4
-    total_cut(img_root, resize, width, height, overlap_x, overlap_y, save_root)
+
+    total_cut(img_root, resize, width, height, overlap_x, overlap_y, save_root, start_point, zfill_num)
