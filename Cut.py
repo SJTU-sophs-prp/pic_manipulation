@@ -1,5 +1,7 @@
 import os
 
+import cv2
+import numpy as np
 from PIL import Image
 
 Image.MAX_IMAGE_PIXELS = None
@@ -44,15 +46,40 @@ def total_cut(img_root, resize, width, height, overlap_x, overlap_y, save_root, 
 
     if not os.path.isdir(save_root):
         os.makedirs(save_root)
-
+    count = 0
     for i in range(col):
         for j in range(row):
             x = start_loc_x * i  # 裁剪起点的x坐标范围
             y = start_loc_y * j  # 裁剪起点的y坐标范围
             region = im.crop((x, y, x + w, y + h))  # 裁剪区
-            region.save(save_root + str(row * i + j + start_point).zfill(zfill_num) + ".jpg")  # str(i)是裁剪后的编号
+            current_root = save_root + str(count + start_point).zfill(zfill_num) + ".jpg"
+            region.save(current_root)  # str(i)是裁剪后的编号
+            # count = count + 1
+            #
+            ####filter modification#####
+            img = cv2.imread(current_root)
+            img_hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
+            lower_blue = np.array([0, 0, 0])
+            upper_blue = np.array([255, 255, 201])
 
-    print("end_point:",col*row+start_point)
+            mask = cv2.inRange(img_hsv, lower_blue, upper_blue)
+
+            mask_pix = 0
+            for tof in range(width):
+                for sat in range(width):
+                    if mask[tof][sat] == 255:
+                        mask_pix = mask_pix + 1
+            print(mask_pix)
+            if mask_pix > 1000:
+                #there is useful element in the pic
+                count = count + 1
+            #####end filter modification #####
+            #note: if you wish to eliminate blank filter, remember to add the counter back to the main frame
+
+
+
+    #print("end_point:",col*row+start_point)
+    print("end point: ",count)
     print("finish")
 
 def cal_resize(img_root, mul_rate, width, height, overlap_x, overlap_y):
@@ -67,11 +94,11 @@ def cal_resize(img_root, mul_rate, width, height, overlap_x, overlap_y):
     return resize
 
 if __name__ == "__main__":
-    img_root = "0506trainset/无用师4.jpg"  # 原始图片路径
+    img_root = "ssj.jpg"  # 原始图片路径
     width = 256  # 设置你要裁剪的小图的宽度
     height = 256  # 设置你要裁剪的小图的高度
     overlap_rate = 3 / 4  # 等于 overlap_rate_y
-    start_point = 28549  # 序号从第n张开始保存，默认为0；若要从第01234.jpg开始保存，则 start_point 为 1234
+    start_point = 0  # 序号从第n张开始保存，默认为0；若要从第01234.jpg开始保存，则 start_point 为 1234
     zfill_num = 5  # 文件名长度，如 00011.jpg 的 zfill_num 为 5
     save_root = "./0511_multi_tr/"
 
